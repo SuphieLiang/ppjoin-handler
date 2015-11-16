@@ -1,0 +1,101 @@
+ l
+"Anime"@en
+"ArtificialSatellite"@en
+"Australian rules football player"@en
+"Band"@en
+"Biological database"@en
+"Biomolecule"@en
+"British royalty"@en
+"Christian Bishop"@en
+"Comedy Group"@en
+"Database"@en
+"Election"@en
+"Eurovision song contest entry"@en
+"Food"@en
+"Formula One racer"@en
+"Gaelic games player"@en
+"GeneLocation"@en
+"Gnetophytes"@en
+"Grand Prix"@en
+"HumanGene"@en
+"HumanGeneLocation"@en
+"Legal Case"@en
+"Medicine"@en
+"Model"@en
+"MouseGene"@en
+"MouseGeneLocation"@en
+"Organisation member"@en
+"Playboy Playmate"@en
+"Satellite"@en
+"Site of Special Scientific Interest"@en
+"Sports team member"@en
+"Supreme Court of the United States case"@en
+"World Heritage Site"@en
+"academic journal"@en
+"activity"@en
+"actor"@en
+"administrative region"@en
+"adult (pornographic) actor"@en
+"agent"@en
+"aircraft"@en
+"airline"@en
+"airport"@en
+"album"@en
+"amateur boxer"@en
+"ambassador"@en
+"american football coach"@en
+"american football league"@en
+"american football player"@en
+"amphibian"@en
+"amusement park attraction"@en
+"anatomical structure"@en
+"animal"@en
+"animanga character"@en
+"arachnid"@en
+"archaea"@en
+"architect"@en
+"architectural structure"@en
+"artery"@en
+"artist"@en
+"artist discography"@en
+"artwork"@en
+"asteroid"@en
+"astronaut"@en
+"athlete"@en
+"australian football Team"@en
+"australian football league"@en
+"auto racing league"@en
+"automobile"@en
+"automobile engine"@en
+"award"@en
+"bacteria"@en
+"badminton player"@en
+"bank"@en
+"baronet"@en
+"baseball league"@en
+"baseball player"@en
+"baseball season"@en
+"baseball team"@en
+"basketball league"@en
+"basketball player"@en
+"basketball team"@en
+"beach volleyball player"@en
+"beauty queen"@en
+"beverage"@en
+"bird"@en
+"body of water"@en
+"bodybuilder"@en
+"bone"@en
+"book"@en
+"boxer"@en
+"brain"@en
+"brewery"@en
+"bridge"@en
+"broadcast network"@en
+"broadcaster"@en
+"building"@en
+"bus Company"@en
+"businessperson"@en
+"canadian football Team"@en
+"canal"@en
+"canoeist"@en
