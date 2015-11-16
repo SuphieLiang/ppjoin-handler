@@ -32,7 +32,7 @@
 				</executions>
 			</plugin>
 		</plugins>
-	</build>
+	</build>	
 	<dependencies>
 		<dependency>
 			<groupId>it.unimi.dsi</groupId>
@@ -46,4 +46,11 @@
 		</dependency>
 	</dependencies>
 	<description>Handler for PPJoin, similarity join algorithm.</description>
+	<distributionManagement>
+	    <repository>
+	        <id>artifactory</id>
+	        <name>Artifactory Local</name>
+	        <url>http://localhost:8081/artifactory/libs-release-local</url>
+	    </repository>
+	</distributionManagement>
 </project>
