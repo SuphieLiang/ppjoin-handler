@@ -6,15 +6,14 @@ Original sources can be found [here](https://code.google.com/p/ppjoinplus/).
 Repository setup:
 ```
 <repository>
-  <id>tsoru</id>
-  <name>tommaso-soru.it</name>
-  <url>http://tommaso-soru.it:8081/artifactory/libs-release-local</url>
-  <snapshots>
-    <enabled>true</enabled>
-  </snapshots>
-  <releases>
-    <enabled>true</enabled>
-  </releases>
+	<id>maven.aksw.internal</id>
+	<name>University Leipzig, AKSW Maven2 Repository</name>
+	<url>http://maven.aksw.org/repository/internal</url>
+	<releases>
+		<enabled>true</enabled>
+		<updatePolicy>always</updatePolicy>
+		<checksumPolicy>fail</checksumPolicy>
+	</releases>
 </repository>
 ```
 Dependency setup:
