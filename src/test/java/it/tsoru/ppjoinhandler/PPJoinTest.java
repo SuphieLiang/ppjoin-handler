@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-import javafx.util.Pair;
-
 import org.junit.Test;
 
 /**

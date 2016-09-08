@@ -8,11 +8,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.stream.IntStream;
 import java.util.AbstractMap.SimpleEntry;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-
 import jp.ndca.similarity.distance.Overlap;
 
 /**
@@ -96,6 +96,17 @@ public class PPJoin extends AbstractSimilarityJoin {
 	@Override
 	public List<Entry<StringItem, StringItem>> extractPairs(
 			StringItem[] dataSet, double threshold) {
+		if(multithread)
+			return extractPairsMT(dataSet, threshold);
+		else
+			return extractPairs1T(dataSet, threshold);
+		
+	}
+	
+	
+	private List<Entry<StringItem, StringItem>> extractPairs1T(
+			StringItem[] dataSet, double threshold) {
+		
 		validation(dataSet, threshold, useSortAtExtractPairs);
 		double coeff = threshold / (1 + threshold);
 		List<Entry<StringItem, StringItem>> S = new ArrayList<Entry<StringItem, StringItem>>();
@@ -104,11 +115,13 @@ public class PPJoin extends AbstractSimilarityJoin {
 		int[] prefixLengths = new int[dataSetSize];
 		int[] alpha = new int[dataSetSize];
 		for (int xDataSetID = 0; xDataSetID < dataSetSize; xDataSetID++) {
+			
 			StringItem x = dataSet[xDataSetID];
 			int[] A = new int[xDataSetID];
 			int xSize = x.size();
 			if (xSize == 0)
-				continue;
+				break;
+				
 			int maxPrefixLength = xSize - (int) Math.ceil(xSize * threshold)
 					+ 1; // p : max-prefix-length
 
@@ -238,7 +251,187 @@ public class PPJoin extends AbstractSimilarityJoin {
 				String w = x.get(xPos);
 				index.put(w, xDataSetID, xPos);
 			}
+			
+		
 		}
+		return S;
+	}
+
+	
+	private List<Entry<StringItem, StringItem>> extractPairsMT(
+			StringItem[] dataSet, double threshold) {
+		
+		validation(dataSet, threshold, useSortAtExtractPairs);
+		double coeff = threshold / (1 + threshold);
+		List<Entry<StringItem, StringItem>> S = new ArrayList<Entry<StringItem, StringItem>>();
+		int dataSetSize = dataSet.length;
+		
+		@SuppressWarnings("unchecked")
+		ArrayList<Entry<StringItem, StringItem>>[] _S = (ArrayList<Entry<StringItem, StringItem>>[]) new ArrayList[dataSetSize];
+		for(int i=0; i<_S.length; i++)
+			_S[i] = new ArrayList<Entry<StringItem, StringItem>>();
+		
+		StringLinkedInvertedIndex index = new StringLinkedInvertedIndex();
+		StringLinkedInvertedIndex[] _index = new StringLinkedInvertedIndex[dataSetSize];
+		for(int i=0; i<_index.length; i++)
+			_index[i] = new StringLinkedInvertedIndex();
+		
+		int[] prefixLengths = new int[dataSetSize];
+		int[] alpha = new int[dataSetSize];
+		System.out.println("size="+dataSetSize);
+		
+		IntStream.range(0, dataSetSize).parallel().forEach(xDataSetID -> {
+			
+			System.out.println(xDataSetID);
+			for(int i=0; i<1; i++) {
+			
+				StringItem x = dataSet[xDataSetID];
+				int[] A = new int[xDataSetID];
+				int xSize = x.size();
+				if (xSize == 0)
+					break;
+					
+				int maxPrefixLength = xSize - (int) Math.ceil(xSize * threshold)
+						+ 1; // p : max-prefix-length
+	
+				if (usePlus)
+	
+					for (int xPos = 0; xPos < maxPrefixLength; xPos++) {
+						String w = x.get(xPos);
+						LinkedPositions positions = index.get(w);
+						if (positions != null) {
+							LinkedPositions.Node node = positions.getRootNode();
+							while (true) {
+								LinkedPositions.Node next = node.getNext();
+								if (next == null)
+									break;
+								int yID = next.getId();
+								// alpha : lower Overlap
+								if (A[yID] == Integer.MIN_VALUE) {
+									node = next;
+									continue;
+								}
+	
+								StringItem y = dataSet[yID];
+								int yPos = next.getPosition();
+								int ySize = y.size();
+	
+								// Jaccard constraint : another
+								// condition:"xSize < ySize * threshold" is not
+								// satisfied due to increasing ordering for dataSet.
+								if (ySize < xSize * threshold) {
+									next.remove();
+									continue;
+								}
+	
+								alpha[yID] = (int) Math.ceil(coeff
+										* (ySize + xSize));
+								A[yID]++;
+								// arugumnet taht global oerdered x and y has same
+								// sequence after *Pos
+								// ubound don't needs '+1' because of xPos is
+								// pointer from id=0 ;
+								int ubound = Math.min(xSize - xPos, ySize - yPos) - 1;
+								if (A[yID] + ubound < alpha[yID])
+									A[yID] = Integer.MIN_VALUE;
+								else {
+	
+									// execute in only first phase!
+									if (A[yID] == 1) {
+										// Hamming Distance Constraint : Hamming
+										// distance between part of x and y after
+										// *Pos must exceed hmax.
+										// h' <= hmax + ( xPos + 1 + yPos +1 ) - 2 =
+										// |x| + |y| - 2α = |x| + |y| - 2t / ( 1 + t
+										// )
+										int hmax = xSize
+												+ ySize
+												- 2
+												* (int) Math.ceil(coeff
+														* (ySize + xSize))
+												- (xPos + yPos); // ubound don't
+																	// needs '+2'
+																	// because of
+																	// xPos is
+																	// pointer from
+																	// id=0 ;
+										int h = suffixFilter(x.getTokens(),
+												xPos + 1, x.size() - xPos - 1,
+												y.getTokens(), yPos + 1, y.size()
+														- yPos - 1, hmax, 0);
+										if (hmax < h)
+											A[yID] = Integer.MIN_VALUE;
+									}
+	
+								}
+								node = next;
+							}
+						}
+					}
+	
+				else {
+					for (int xPos = 0; xPos < maxPrefixLength; xPos++) {
+						String w = x.get(xPos);
+						LinkedPositions positions = _index[xDataSetID].get(w);
+						if (positions != null) {
+							LinkedPositions.Node node = positions.getRootNode();
+							while (true) { // positionSet don't have components with
+											// the same position.id
+								LinkedPositions.Node next = node.getNext();
+								if (next == null)
+									break;
+								int yID = next.getId();
+								if (A[yID] == Integer.MIN_VALUE) {
+									node = next;
+									continue;
+								}
+								StringItem y = dataSet[yID];
+								int yPos = next.getPosition();
+								int ySize = y.size();
+								if (ySize < xSize * threshold) { // Jaccard
+																	// constraint ,
+																	// and another
+																	// constraint(
+																	// xSize < ySize
+																	// * threshold )
+																	// is already
+																	// satisfied.
+									next.remove();
+									continue;
+								}
+	
+								alpha[yID] = (int) Math.ceil(coeff
+										* (ySize + xSize));
+								A[yID]++;
+								int ubound = Math.min(xSize - xPos, ySize - yPos) - 1;
+								if (A[yID] + ubound < alpha[yID])
+									A[yID] = Integer.MIN_VALUE;
+								node = next;
+							}
+						}
+					}
+				}
+				int midPrefixLength = xSize - (int) Math.ceil(2.0 * coeff * xSize)
+						+ 1; // mid-prefix-length
+				prefixLengths[xDataSetID] = midPrefixLength;
+				_S[xDataSetID].addAll(veryfyMT(xDataSetID, dataSet, maxPrefixLength, A, prefixLengths,
+						alpha));
+				for (int xPos = 0; xPos < midPrefixLength; xPos++) {
+					String w = x.get(xPos);
+					_index[xDataSetID].put(w, xDataSetID, xPos);
+				}
+				
+			}
+		
+		});
+		
+		for(List<Entry<StringItem, StringItem>> s : _S)
+			S.addAll(s);
+		
+		// TODO
+//		for(StringLinkedInvertedIndex i : _index)
+//			index.putAll(i);
+		
 		return S;
 	}
 
@@ -388,6 +581,7 @@ public class PPJoin extends AbstractSimilarityJoin {
 	}
 
 	private SearchBox box = new SearchBox();
+	private boolean multithread = false;
 
 	class SearchBox {
 		boolean isfound;
@@ -460,6 +654,41 @@ public class PPJoin extends AbstractSimilarityJoin {
 				S.add(new SimpleEntry<StringItem, StringItem>(x, y));
 
 		}
+	}
+
+	private List<Entry<StringItem, StringItem>> veryfyMT(int xDataSetID, StringItem[] dataSet,
+			int maxXPrefixLength, int[] A, int[] prefixLengths, int[] alpha) {
+		List<Entry<StringItem, StringItem>> S = new ArrayList<Entry<StringItem, StringItem>>();
+		StringItem x = dataSet[xDataSetID];
+		String wx_lastPrefix = x.get(maxXPrefixLength - 1);
+		for (int yDataSetID = 0; yDataSetID < xDataSetID; yDataSetID++) {
+
+			if (A[yDataSetID] <= 0)
+				continue;
+
+			int overlapValue = A[yDataSetID];
+			StringItem y = dataSet[yDataSetID];
+			String wy_lastPrefix = y.get(prefixLengths[yDataSetID] - 1);
+			if (wx_lastPrefix.compareTo(wy_lastPrefix) < 0) { // wx < wy
+				int unbound = A[yDataSetID] + x.size() - maxXPrefixLength;
+				if (alpha[yDataSetID] <= unbound)
+					overlapValue += overlap.calcByMerge(x.getTokens(),
+							maxXPrefixLength, y.getTokens(), A[yDataSetID]);
+			} else {
+				int unbound = A[yDataSetID] + y.size()
+						- prefixLengths[yDataSetID];
+				if (alpha[yDataSetID] <= unbound)
+					overlapValue += overlap.calcByMerge(x.getTokens(),
+							A[yDataSetID], y.getTokens(),
+							prefixLengths[yDataSetID]);
+			}
+
+			if (alpha[yDataSetID] <= overlapValue)
+				S.add(new SimpleEntry<StringItem, StringItem>(x, y));
+
+		}
+		
+		return S;
 	}
 
 	/**
@@ -1585,5 +1814,9 @@ public class PPJoin extends AbstractSimilarityJoin {
 				buffer.add(yDataSetID);
 			}
 		}
+	}
+
+	public void setMultithread(boolean multithread) {
+		this.multithread  = multithread;
 	}
 }

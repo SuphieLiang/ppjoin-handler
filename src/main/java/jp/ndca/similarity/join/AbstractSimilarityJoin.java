@@ -339,4 +339,5 @@ class StringLinkedInvertedIndex {
 		return positionsMap.keySet();
 	}
 
+
 }
